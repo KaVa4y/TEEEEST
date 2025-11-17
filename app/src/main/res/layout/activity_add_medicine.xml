@@ -1,35 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scroll_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:fillViewport="true"
+    android:background="@drawable/gradient_background"
+    android:padding="24dp">
 
-    <EditText
-        android:id="@+id/nameEdit"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Название лекарства"
-        android:layout_marginBottom="8dp" />
+        android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/dosageEdit"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Дозировка"
-        android:layout_marginBottom="8dp" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Название лекарства"
+            app:boxStrokeColor="@color/primary_blue"
+            app:hintTextColor="@color/primary_blue"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
-    <Button
-        android:id="@+id/timeButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Выбрать время"
-        android:layout_marginBottom="8dp" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/nameEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-    <Button
-        android:id="@+id/saveButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Сохранить" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-</LinearLayout>
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Дозировка"
+            app:boxStrokeColor="@color/primary_green"
+            app:hintTextColor="@color/primary_green"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/dosageEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/timeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Выбрать время"
+            app:backgroundTint="@color/white"
+            app:strokeColor="@color/primary_blue"
+            app:strokeWidth="2dp"
+            app:cornerRadius="12dp"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Сохранить"
+            android:textColor="@color/on_primary"
+            app:backgroundTint="@color/primary_blue"
+            app:cornerRadius="16dp"
+            app:elevation="4dp"
+            app:rippleColor="@color/on_primary"
+            style="@style/Widget.Material3.Button.ElevatedButton" />
+
+    </LinearLayout>
+
+</ScrollView>
