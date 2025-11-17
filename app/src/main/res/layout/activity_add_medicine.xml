@@ -54,6 +54,7 @@
             app:strokeColor="@color/primary_blue"
             app:strokeWidth="2dp"
             app:cornerRadius="12dp"
+            app:rippleColor="@color/ripple_white"
             style="@style/Widget.Material3.Button.OutlinedButton" />
 
         <com.google.android.material.button.MaterialButton
@@ -66,7 +67,7 @@
             app:backgroundTint="@color/primary_blue"
             app:cornerRadius="16dp"
             app:elevation="4dp"
-            app:rippleColor="@color/on_primary"
+            app:rippleColor="@color/ripple_white"
             style="@style/Widget.Material3.Button.ElevatedButton" />
 
     </LinearLayout>

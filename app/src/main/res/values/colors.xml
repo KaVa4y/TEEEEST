@@ -18,4 +18,5 @@
     <color name="error_red">#F44336</color>
     <color name="gradient_start">#E3F2FD</color>
     <color name="gradient_end">#BBDEFB</color>
+    <color name="ripple_white">#80FFFFFF</color>
 </resources>

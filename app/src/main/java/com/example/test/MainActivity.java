@@ -18,7 +18,6 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.transition.Fade;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -52,10 +51,12 @@ public class MainActivity extends AppCompatActivity implements MedicineAdapter.O
                     if (newMedicine != null) {
                         int position = medicines.size();
                         medicines.add(newMedicine);
-                        adapter.notifyItemInserted(position);
+                        adapter.notifyItemInserted(position);  // Встроенная анимация RecyclerView (замена LayoutTransition)
                         recyclerView.smoothScrollToPosition(position);
                         saveMedicines();
                         Log.d("Main", "Added: " + newMedicine.getName());
+                    } else {
+                        Log.e("Main", "Received null medicine");
                     }
                 }
             });
@@ -75,11 +76,8 @@ public class MainActivity extends AppCompatActivity implements MedicineAdapter.O
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
 
-        // Анимация появления списка
-        Fade fade = new Fade();
-        fade.setDuration(500);
-        fade.setMode(Fade.MODE_IN);
-        recyclerView.setLayoutTransition(fade);
+        // Анимация появления списка (встроенная RecyclerView, без LayoutTransition)
+        recyclerView.setItemAnimator(new androidx.recyclerview.widget.DefaultItemAnimator());
 
         adapter = new MedicineAdapter(medicines, this, this);
         recyclerView.setAdapter(adapter);
@@ -109,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements MedicineAdapter.O
         if (position != -1) {
             cancelAlarm(medicine);
             medicines.remove(position);
-            adapter.notifyItemRemoved(position);
+            adapter.notifyItemRemoved(position);  // Встроенная анимация удаления
             saveMedicines();
         }
     }
@@ -138,6 +136,7 @@ public class MainActivity extends AppCompatActivity implements MedicineAdapter.O
                     alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent);
                 }
             }
+            Log.d("Main", "Alarm set for " + medicine.getName());
         } catch (SecurityException e) {
             Log.e("Main", "Alarm error: " + e.getMessage());
         }
@@ -150,6 +149,7 @@ public class MainActivity extends AppCompatActivity implements MedicineAdapter.O
         int requestCode = medicine.hashCode() % 10000;
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         alarmManager.cancel(pendingIntent);
+        Log.d("Main", "Alarm cancelled for " + medicine.getName());
     }
 
     private void loadMedicines() {
@@ -162,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements MedicineAdapter.O
             if (loaded != null) medicines.addAll(loaded);
         }
         adapter.notifyDataSetChanged();
+        Log.d("Main", "Loaded " + medicines.size() + " medicines");
     }
 
     private void saveMedicines() {
@@ -170,6 +171,7 @@ public class MainActivity extends AppCompatActivity implements MedicineAdapter.O
         String json = gson.toJson(medicines);
         editor.putString(MEDICINES_KEY, json);
         editor.apply();
+        Log.d("Main", "Saved " + medicines.size() + " medicines");
     }
 
     @Override

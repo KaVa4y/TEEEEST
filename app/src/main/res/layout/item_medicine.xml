@@ -61,6 +61,7 @@
                 app:backgroundTint="@color/primary_green"
                 app:cornerRadius="20dp"
                 app:elevation="2dp"
+                app:rippleColor="@color/ripple_white"
                 style="@style/Widget.Material3.Button.IconButton"
                 android:layout_marginBottom="4dp" />
 
@@ -73,6 +74,7 @@
                 app:backgroundTint="@color/error_red"
                 app:cornerRadius="20dp"
                 app:elevation="2dp"
+                app:rippleColor="@color/ripple_white"
                 style="@style/Widget.Material3.Button.IconButton" />
 
         </LinearLayout>

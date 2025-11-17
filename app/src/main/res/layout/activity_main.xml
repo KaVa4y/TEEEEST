@@ -27,7 +27,7 @@
         android:src="@android:drawable/ic_input_add"
         app:backgroundTint="@color/primary_green"
         app:tint="@color/on_primary"
-        app:rippleColor="@color/on_primary"
-        style="@style/Widget.Material3.FloatingActionButton" />
+        app:rippleColor="@color/ripple_white"
+        style="@style/Widget.MaterialComponents.FloatingActionButton" />  <!-- Фикс: MaterialComponents для совместимости -->
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
