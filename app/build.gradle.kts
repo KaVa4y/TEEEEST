@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.example.test"
-    compileSdk = 35  // Понижено до 35 для AGP 8.7
+    compileSdk = 35  // Для AGP 8.6.1
 
     defaultConfig {
         applicationId = "com.example.test"
@@ -32,7 +32,7 @@ android {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.7.0")  // Тянет activity:1.9.2 (совместимо с compileSdk 35)
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
