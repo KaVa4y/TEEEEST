@@ -21,14 +21,14 @@ public class AlarmReceiver extends BroadcastReceiver {
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)  // Стандартная иконка
                 .setContentTitle("Время принимать таблетку!")
                 .setContentText("Не забудьте: " + medicineName)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
 
-        NotificationManagerCompat.from(context).notify(1, builder.build());
+        NotificationManagerCompat.from(context).notify(1, builder.build());  // Прямой вызов, без 'with'
     }
 
     private void createNotificationChannel(Context context) {
