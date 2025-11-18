@@ -8,38 +8,40 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 
 public class AlarmReceiver extends BroadcastReceiver {
-    private static final String CHANNEL_ID = "PillReminderChannel";
+    private static final String CHANNEL_ID = "pill_channel";
+    private static final int NOTIFICATION_ID = 1001; // Фиксированный ID
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        String medicineName = intent.getStringExtra("medicine_name");
-        createNotificationChannel(context);
-        Intent notificationIntent = new Intent(context, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        String name = intent.getStringExtra("medicine_name");
+        if (name == null || name.isEmpty()) name = "лекарство";
+
+        createChannel(context);
+
+        Intent openIntent = new Intent(context, MainActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(context, 0, openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)  // Стандартная иконка
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setContentTitle("Время принимать таблетку!")
-                .setContentText("Не забудьте: " + medicineName)
+                .setContentText("Не забудьте: " + name)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true);
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setAutoCancel(true)
+                .setContentIntent(pi);
 
-        NotificationManagerCompat.from(context).notify(1, builder.build());  // Прямой вызов, без 'with'
+        NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        nm.notify(NOTIFICATION_ID, builder.build()); // Всегда один и тот же ID
     }
 
-    private void createNotificationChannel(Context context) {
+    private void createChannel(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Pill Reminders";
-            String description = "Notifications for pill reminders";
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Напоминания", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Уведомления о приёме лекарств");
+            context.getSystemService(NotificationManager.class).createNotificationChannel(channel);
         }
     }
 }

@@ -9,13 +9,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -29,34 +27,27 @@ import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements MedicineAdapter.OnSetReminderClickListener, MedicineAdapter.OnDeleteClickListener {
-    private List<Medicine> medicines = new ArrayList<>();
+
+    private final List<Medicine> medicines = new ArrayList<>();
     private MedicineAdapter adapter;
-    private static final String SHARED_PREFS = "pill_prefs";
-    private static final String MEDICINES_KEY = "medicines_list";
     private RecyclerView recyclerView;
-    private Gson gson = new Gson();
+    private final Gson gson = new Gson();
+    private static final String PREFS = "pill_prefs";
+    private static final String KEY = "medicines";
 
-    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestPermission(),
-            isGranted -> {
-                if (isGranted) Log.d("Main", "Notifications OK");
-                else Log.w("Main", "Notifications denied");
-            });
+    private final ActivityResultLauncher<String> permLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), granted -> {});
 
-    private final ActivityResultLauncher<Intent> addMedicineLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
+    private final ActivityResultLauncher<Intent> addLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    Medicine newMedicine = (Medicine) result.getData().getSerializableExtra("medicine");
-                    if (newMedicine != null) {
-                        int position = medicines.size();
-                        medicines.add(newMedicine);
-                        adapter.notifyItemInserted(position);  // Встроенная анимация RecyclerView (замена LayoutTransition)
-                        recyclerView.smoothScrollToPosition(position);
+                    Medicine m = (Medicine) result.getData().getSerializableExtra("medicine");
+                    if (m != null) {
+                        int pos = medicines.size();
+                        medicines.add(m);
+                        adapter.notifyItemInserted(pos);
+                        recyclerView.smoothScrollToPosition(pos);
                         saveMedicines();
-                        Log.d("Main", "Added: " + newMedicine.getName());
-                    } else {
-                        Log.e("Main", "Received null medicine");
                     }
                 }
             });
@@ -68,115 +59,106 @@ public class MainActivity extends AppCompatActivity implements MedicineAdapter.O
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                permLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
             }
         }
 
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
-
-        // Анимация появления списка (встроенная RecyclerView, без LayoutTransition)
         recyclerView.setItemAnimator(new androidx.recyclerview.widget.DefaultItemAnimator());
 
         adapter = new MedicineAdapter(medicines, this, this);
         recyclerView.setAdapter(adapter);
 
-        FloatingActionButton addButton = findViewById(R.id.addButton);
-        addButton.setOnClickListener(v -> addMedicineLauncher.launch(new Intent(this, AddMedicineActivity.class)));
+        findViewById(R.id.addButton).setOnClickListener(v ->
+                addLauncher.launch(new Intent(this, AddMedicineActivity.class)));
 
-        loadMedicines();
+        loadMedicines();  // Загрузка только один раз в onCreate
     }
 
     @Override
-    public void onSetReminderClick(Medicine medicine) {
-        long now = System.currentTimeMillis();
-        long time = medicine.getReminderTime();
-        if (time < now) {
+    public void onSetReminderClick(Medicine m) {
+        long time = m.getReminderTime();
+        if (time < System.currentTimeMillis()) {
             time += 24 * 60 * 60 * 1000L;
-            medicine.setReminderTime(time);
+            m.setReminderTime(time);
             saveMedicines();
         }
-        setAlarm(medicine);
+        setAlarm(m);
         Toast.makeText(this, "Напоминание на " + new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(time)), Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    public void onDeleteClick(Medicine medicine) {
-        int position = medicines.indexOf(medicine);
-        if (position != -1) {
-            cancelAlarm(medicine);
-            medicines.remove(position);
-            adapter.notifyItemRemoved(position);  // Встроенная анимация удаления
+    public void onDeleteClick(Medicine m) {
+        int pos = medicines.indexOf(m);
+        if (pos != -1) {
+            cancelAlarm(m);
+            medicines.remove(pos);
+            adapter.notifyItemRemoved(pos);
             saveMedicines();
         }
     }
 
-    private void setAlarm(Medicine medicine) {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this, AlarmReceiver.class);
-        intent.putExtra("medicine_name", medicine.getName());
-        int requestCode = medicine.hashCode() % 10000;
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    private int getRequestCode(Medicine m) {
+        return (m.getName() + m.getDosage() + m.getReminderTime()).hashCode();
+    }
 
-        long time = medicine.getReminderTime();
+    private void setAlarm(Medicine m) {
+        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, AlarmReceiver.class);
+        intent.putExtra("medicine_name", m.getName());
+        int rc = getRequestCode(m);
+
+        PendingIntent pi = PendingIntent.getBroadcast(this, rc, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        am.cancel(pi);  // Отмена старого
+
+        long time = m.getReminderTime();
+
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent);
-                    }
+                if (am.canScheduleExactAlarms()) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pi);
                 } else {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent);
-                    }
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pi);
                 }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pi);
             } else {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent);
-                }
+                am.setExact(AlarmManager.RTC_WAKEUP, time, pi);
             }
-            Log.d("Main", "Alarm set for " + medicine.getName());
         } catch (SecurityException e) {
-            Log.e("Main", "Alarm error: " + e.getMessage());
+            Toast.makeText(this, "Нет разрешения на точные напоминания", Toast.LENGTH_LONG).show();
         }
     }
 
-    private void cancelAlarm(Medicine medicine) {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+    private void cancelAlarm(Medicine m) {
+        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(this, AlarmReceiver.class);
-        intent.putExtra("medicine_name", medicine.getName());
-        int requestCode = medicine.hashCode() % 10000;
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        alarmManager.cancel(pendingIntent);
-        Log.d("Main", "Alarm cancelled for " + medicine.getName());
+        int rc = getRequestCode(m);
+        PendingIntent pi = PendingIntent.getBroadcast(this, rc, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        am.cancel(pi);
     }
 
     private void loadMedicines() {
-        SharedPreferences prefs = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
-        String json = prefs.getString(MEDICINES_KEY, null);
-        if (json != null && !json.isEmpty()) {
+        medicines.clear();  // ← Ключевой фикс: очищаем перед загрузкой!
+        SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+        String json = p.getString(KEY, null);
+        if (json != null) {
             Type type = new TypeToken<List<Medicine>>(){}.getType();
-            List<Medicine> loaded = gson.fromJson(json, type);
-            medicines.clear();
-            if (loaded != null) medicines.addAll(loaded);
+            List<Medicine> list = gson.fromJson(json, type);
+            if (list != null) medicines.addAll(list);
         }
         adapter.notifyDataSetChanged();
-        Log.d("Main", "Loaded " + medicines.size() + " medicines");
     }
 
     private void saveMedicines() {
-        SharedPreferences prefs = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        String json = gson.toJson(medicines);
-        editor.putString(MEDICINES_KEY, json);
-        editor.apply();
-        Log.d("Main", "Saved " + medicines.size() + " medicines");
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putString(KEY, gson.toJson(medicines))
+                .apply();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadMedicines();
-    }
+    // Убрал onResume — больше не нужен, дубли исчезли
 }
